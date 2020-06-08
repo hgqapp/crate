@@ -54,16 +54,19 @@ public class PlanPrinterTest extends CrateDummyClusterServiceUnitTest {
                                             "having max(x) > 10 " +
                                             "order by 1");
         assertThat(map.toString(),
-            is("{Collect={type=executionPlan, " +
-               "collectPhase={COLLECT={type=executionPhase, id=0, executionNodes=[n1], " +
-                   "distribution={distributedByColumn=0, type=BROADCAST}, toCollect=[x, a], " +
+                is("{Collect={" +
+                "collectPhase={COLLECT={" +
+                    "distribution={distributedByColumn=0, type=BROADCAST}, executionNodes=[n1], id=0, " +
 
-                   "projections=[" +
-                       "{keys=INPUT(1), type=HashAggregation, aggregations=max(INPUT(0))}, " +
-                       "{keys=INPUT(0), type=HashAggregation, aggregations=max(INPUT(1))}, " +
-                       "{filter=(INPUT(1) > 10), type=Filter}, " +
-                       "{outputs=INPUT(0), INPUT(1), offset=0, limit=-1, orderBy=[INPUT(0) ASC], type=OrderByTopN}], " +
-                    "routing={n1={t1=[0, 1, 2, 3]}}, where=true}}}}"));
+                    "projections=[" +
+                        "{keys=INPUT(1), type=HashAggregation, aggregations=max(INPUT(0))}, " +
+                        "{keys=INPUT(0), type=HashAggregation, aggregations=max(INPUT(1))}, " +
+                        "{filter=(INPUT(1) > 10), type=Filter}, " +
+                        "{outputs=INPUT(0), INPUT(1), offset=0, limit=-1, orderBy=[INPUT(0) ASC], type=OrderByTopN}], " +
+                    "routing={n1={t1=[0, 1, 2, 3]}}, " +
+                    "toCollect=[x, a], type=executionPhase, where=true}}, " +
+                    "type=executionPlan}}")
+        );
     }
 
     @Test

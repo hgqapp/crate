@@ -22,7 +22,6 @@
 
 package io.crate.lucene;
 
-import com.google.common.collect.ImmutableMap;
 import io.crate.data.Input;
 import io.crate.expression.operator.EqOperator;
 import io.crate.expression.operator.GtOperator;
@@ -43,7 +42,7 @@ import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.query.QueryShardContext;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
+import java.util.Map;
 
 class SubscriptQuery implements InnerFunctionToQuery {
 
@@ -51,22 +50,20 @@ class SubscriptQuery implements InnerFunctionToQuery {
         Query buildQuery(MappedFieldType fieldType, Object value, QueryShardContext context);
     }
 
-    private static final ImmutableMap<String, PreFilterQueryBuilder> PRE_FILTER_QUERY_BUILDER_BY_OP =
-        ImmutableMap.<String, PreFilterQueryBuilder>builder()
-            .put(EqOperator.NAME, MappedFieldType::termQuery)
-            .put(GteOperator.NAME, (fieldType, value, context)
-                -> fieldType.rangeQuery(value, null, true, false, null, null, context))
-            .put(GtOperator.NAME, (fieldType, value, context)
-                -> fieldType.rangeQuery(value, null, false, false, null, null, context))
-            .put(LteOperator.NAME, (fieldType, value, context)
-                -> fieldType.rangeQuery(null, value, false, true, null, null, context))
-            .put(LtOperator.NAME, (fieldType, value, context)
-                -> fieldType.rangeQuery(null, value, false, false, null, null, context))
-            .build();
+    private static final Map<String, PreFilterQueryBuilder> PRE_FILTER_QUERY_BUILDER_BY_OP = Map.of(
+            EqOperator.NAME, MappedFieldType::termQuery,
+            GteOperator.NAME, (fieldType, value, context)
+                -> fieldType.rangeQuery(value, null, true, false, null, null, context),
+            GtOperator.NAME, (fieldType, value, context)
+                -> fieldType.rangeQuery(value, null, false, false, null, null, context),
+            LteOperator.NAME, (fieldType, value, context)
+                -> fieldType.rangeQuery(null, value, false, true, null, null, context),
+            LtOperator.NAME, (fieldType, value, context)
+                -> fieldType.rangeQuery(null, value, false, false, null, null, context));
 
     @Nullable
     @Override
-    public Query apply(Function parent, Function inner, LuceneQueryBuilder.Context context) throws IOException {
+    public Query apply(Function parent, Function inner, LuceneQueryBuilder.Context context) {
         assert inner.info().ident().name().equals(SubscriptFunction.NAME) :
             "function must be " + SubscriptFunction.NAME;
 
@@ -87,7 +84,7 @@ class SubscriptQuery implements InnerFunctionToQuery {
             if (!functionLiteralPair.isValid()) {
                 return null;
             }
-            Input input = functionLiteralPair.input();
+            Input<?> input = functionLiteralPair.input();
 
             MappedFieldType fieldType = context.getFieldTypeOrNull(reference.column().fqn());
             if (fieldType == null) {

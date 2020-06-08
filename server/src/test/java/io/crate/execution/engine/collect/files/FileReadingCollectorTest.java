@@ -27,7 +27,6 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.common.collect.ImmutableMap;
 import io.crate.data.BatchIterator;
 import io.crate.data.Bucket;
 import io.crate.data.Input;
@@ -40,9 +39,9 @@ import io.crate.expression.reference.file.SourceLineExpression;
 import io.crate.expression.reference.file.SourceUriFailureExpression;
 import io.crate.external.S3ClientHelper;
 import io.crate.metadata.CoordinatorTxnCtx;
-import io.crate.metadata.TransactionContext;
 import io.crate.metadata.Functions;
 import io.crate.metadata.Reference;
+import io.crate.metadata.TransactionContext;
 import io.crate.test.integration.CrateUnitTest;
 import io.crate.testing.TestingHelpers;
 import io.crate.testing.TestingRowConsumer;
@@ -65,11 +64,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
 import static io.crate.testing.TestingHelpers.createReference;
@@ -118,8 +117,8 @@ public class FileReadingCollectorTest extends CrateUnitTest {
     @Before
     public void prepare() throws Exception {
         Functions functions = new Functions(
-            ImmutableMap.of(),
-            ImmutableMap.of()
+            Map.of(),
+            Map.of()
         );
         inputFactory = new InputFactory(functions);
     }
@@ -292,7 +291,7 @@ public class FileReadingCollectorTest extends CrateUnitTest {
             inputs,
             ctx.expressions(),
             compression,
-            ImmutableMap.of(
+            Map.of(
                 LocalFsFileInputFactory.NAME, new LocalFsFileInputFactory(),
                 S3FileInputFactory.NAME, () -> new S3FileInput(new S3ClientHelper() {
                     @Override
@@ -304,7 +303,7 @@ public class FileReadingCollectorTest extends CrateUnitTest {
 
 
                         when(client.listObjects(anyString(), anyString())).thenReturn(objectListing);
-                        when(objectListing.getObjectSummaries()).thenReturn(Arrays.asList(summary));
+                        when(objectListing.getObjectSummaries()).thenReturn(List.of(summary));
                         when(summary.getKey()).thenReturn("foo");
                         when(client.getObject("fakebucket", "foo")).thenReturn(s3Object);
                         when(s3Object.getObjectContent()).thenReturn(s3InputStream);

@@ -22,7 +22,6 @@
 
 package io.crate.execution.engine.collect.files;
 
-import com.google.common.collect.ImmutableMap;
 import io.crate.data.BatchIterator;
 import io.crate.data.Input;
 import io.crate.data.Row;
@@ -30,9 +29,9 @@ import io.crate.execution.dsl.phases.FileUriCollectPhase;
 import io.crate.expression.InputFactory;
 import io.crate.expression.reference.file.FileLineReferenceResolver;
 import io.crate.metadata.CoordinatorTxnCtx;
-import io.crate.metadata.TransactionContext;
 import io.crate.metadata.Functions;
 import io.crate.metadata.Reference;
+import io.crate.metadata.TransactionContext;
 import io.crate.test.integration.CrateUnitTest;
 import io.crate.testing.BatchIteratorTester;
 import io.crate.types.DataTypes;
@@ -48,6 +47,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import static io.crate.execution.dsl.phases.FileUriCollectPhase.InputFormat.CSV;
@@ -69,8 +69,8 @@ public class FileReadingIteratorTest extends CrateUnitTest {
     @Before
     public void prepare() {
         Functions functions = new Functions(
-            ImmutableMap.of(),
-            ImmutableMap.of()
+            Map.of(),
+            Map.of()
         );
         inputFactory = new InputFactory(functions);
     }
@@ -172,7 +172,7 @@ public class FileReadingIteratorTest extends CrateUnitTest {
             inputs,
             ctx.expressions(),
             compression,
-            ImmutableMap.of(
+            Map.of(
                 LocalFsFileInputFactory.NAME, new LocalFsFileInputFactory()),
             false,
             1,

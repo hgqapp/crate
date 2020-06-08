@@ -22,10 +22,6 @@
 
 package io.crate.analyze;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.FunctionCopyVisitor;
 import io.crate.expression.symbol.RefReplacer;
@@ -54,18 +50,19 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public final class GeneratedColumnExpander {
 
-    private static final Map<String, String> ROUNDING_FUNCTION_MAPPING = ImmutableMap.of(
+    private static final Map<String, String> ROUNDING_FUNCTION_MAPPING = Map.of(
         GtOperator.NAME, GteOperator.NAME,
         LtOperator.NAME, LteOperator.NAME
     );
 
-    private static final Set<String> ROUNDING_FUNCTIONS = ImmutableSet.of(
+    private static final Set<String> ROUNDING_FUNCTIONS = Set.of(
         CeilFunction.CEIL,
         FloorFunction.NAME,
         RoundFunction.NAME,
@@ -97,9 +94,9 @@ public final class GeneratedColumnExpander {
     private static class ComparisonReplaceVisitor extends FunctionCopyVisitor<ComparisonReplaceVisitor.Context> {
 
         static class Context {
-            private final Multimap<Reference, GeneratedReference> referencedRefsToGeneratedColumn;
+            private final HashMap<Reference, ArrayList<GeneratedReference>> referencedRefsToGeneratedColumn;
 
-            public Context(Multimap<Reference, GeneratedReference> referencedRefsToGeneratedColumn) {
+            public Context(HashMap<Reference, ArrayList<GeneratedReference>> referencedRefsToGeneratedColumn) {
                 this.referencedRefsToGeneratedColumn = referencedRefsToGeneratedColumn;
             }
         }
@@ -109,7 +106,7 @@ public final class GeneratedColumnExpander {
         }
 
         Symbol addComparisons(Symbol symbol, List<GeneratedReference> generatedCols, List<Reference> expansionCandidates) {
-            Multimap<Reference, GeneratedReference> referencedSingleReferences =
+            HashMap<Reference, ArrayList<GeneratedReference>> referencedSingleReferences =
                 extractGeneratedReferences(generatedCols, expansionCandidates);
             if (referencedSingleReferences.isEmpty()) {
                 return symbol;
@@ -143,7 +140,7 @@ public final class GeneratedColumnExpander {
 
 
         private Symbol addComparison(Function function, Reference reference, Symbol comparedAgainst, Context context) {
-            Collection<GeneratedReference> genColInfos = context.referencedRefsToGeneratedColumn.get(reference);
+            ArrayList<GeneratedReference> genColInfos = context.referencedRefsToGeneratedColumn.getOrDefault(reference, new ArrayList<>(0));
             List<Function> comparisonsToAdd = new ArrayList<>(genColInfos.size());
             comparisonsToAdd.add(function);
             for (GeneratedReference genColInfo : genColInfos) {
@@ -197,15 +194,15 @@ public final class GeneratedColumnExpander {
             );
         }
 
-        private static Multimap<Reference, GeneratedReference> extractGeneratedReferences(List<GeneratedReference> generatedCols,
-                                                                                          Collection<Reference> partitionCols) {
-            Multimap<Reference, GeneratedReference> multiMap = HashMultimap.create();
+        private static HashMap<Reference, ArrayList<GeneratedReference>> extractGeneratedReferences(List<GeneratedReference> generatedCols,
+                                                                                                    Collection<Reference> partitionCols) {
+            HashMap<Reference, ArrayList<GeneratedReference>> map = new HashMap<>();
             for (GeneratedReference generatedColumn : generatedCols) {
                 if (generatedColumn.referencedReferences().size() == 1 && partitionCols.contains(generatedColumn)) {
-                    multiMap.put(generatedColumn.referencedReferences().get(0), generatedColumn);
+                    map.computeIfAbsent(generatedColumn.referencedReferences().get(0), v -> new ArrayList<>()).add(generatedColumn);
                 }
             }
-            return multiMap;
+            return map;
         }
     }
 

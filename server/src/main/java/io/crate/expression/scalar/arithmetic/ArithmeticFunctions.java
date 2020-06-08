@@ -22,7 +22,6 @@
 
 package io.crate.expression.scalar.arithmetic;
 
-import com.google.common.collect.ImmutableList;
 import io.crate.expression.scalar.ScalarFunctionModule;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.Symbol;
@@ -215,7 +214,7 @@ public class ArithmeticFunctions {
                 FunctionInfo.Type.SCALAR,
                 features
             ),
-            ImmutableList.of(first, second)
+            List.of(first, second)
         );
     }
 }

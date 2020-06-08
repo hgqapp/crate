@@ -22,7 +22,6 @@
 
 package io.crate.expression.reference.sys.check.node;
 
-import com.google.common.collect.ImmutableList;
 import io.crate.analyze.Id;
 import io.crate.expression.reference.sys.check.AbstractSysCheck;
 import io.crate.types.DataTypes;
@@ -69,7 +68,7 @@ public abstract class AbstractSysNodeCheck extends AbstractSysCheck implements S
     }
 
     private String generateId(String nodeId) {
-        return PK_FUNC.apply(ImmutableList.of(DataTypes.STRING.value(id()), nodeId));
+        return PK_FUNC.apply(List.of(DataTypes.STRING.value(id()), nodeId));
     }
 
     public void setNodeId(String nodeId) {

@@ -22,8 +22,8 @@
 
 package io.crate.metadata.settings.session;
 
-import com.google.common.collect.ImmutableMap;
 import io.crate.action.sql.SessionContext;
+import io.crate.common.collections.MapBuilder;
 import io.crate.metadata.SearchPath;
 import io.crate.protocols.postgres.PostgresWireProtocol;
 import io.crate.types.DataTypes;
@@ -49,7 +49,7 @@ public class SessionSettingRegistry {
 
     @Inject
     public SessionSettingRegistry(Set<SessionSettingProvider> sessionSettingProviders) {
-        var builder = ImmutableMap.<String, SessionSetting<?>>builder()
+        var builder = MapBuilder.<String, SessionSetting<?>>treeMapBuilder()
             .put(SEARCH_PATH_KEY,
                  new SessionSetting<>(
                      SEARCH_PATH_KEY,
@@ -119,7 +119,7 @@ public class SessionSettingRegistry {
                 builder.put(setting.name(), setting);
             }
         }
-        this.settings = builder.build();
+        this.settings = builder.immutableMap();
     }
 
     public Map<String, SessionSetting<?>> settings() {

@@ -21,7 +21,6 @@
 
 package io.crate.analyze;
 
-import com.google.common.collect.ImmutableMap;
 import io.crate.common.collections.MapBuilder;
 import io.crate.exceptions.ConversionException;
 import io.crate.expression.symbol.Literal;
@@ -58,7 +57,6 @@ public class CompoundLiteralTest extends CrateDummyClusterServiceUnitTest {
         expressions = new SqlExpressions(T3.sources(clusterService));
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void testObjectConstruction() throws Exception {
         Symbol s = expressions.asSymbol("{}");
@@ -138,17 +136,16 @@ public class CompoundLiteralTest extends CrateDummyClusterServiceUnitTest {
 
     @Test
     public void testNestedArrayLiteral() throws Exception {
-        Map<String, DataType<?>> expected = ImmutableMap.<String, DataType<?>>builder()
-            .put("'string'", DataTypes.STRING)
-            .put("0", DataTypes.LONG)
-            .put("1.8", DataTypes.DOUBLE)
-            .put("TRUE", DataTypes.BOOLEAN)
-            .build();
+        Map<String, DataType<?>> expected = Map.of(
+            "'string'", DataTypes.STRING,
+            "0", DataTypes.LONG,
+            "1.8", DataTypes.DOUBLE,
+            "TRUE", DataTypes.BOOLEAN
+        );
         for (Map.Entry<String, DataType<?>> entry : expected.entrySet()) {
             Symbol nestedArraySymbol = analyzeExpression("[[" + entry.getKey() + "]]");
             assertThat(nestedArraySymbol, Matchers.instanceOf(Literal.class));
-            Literal nestedArray = (Literal) nestedArraySymbol;
-            assertThat(nestedArray.valueType(), is(new ArrayType<>(new ArrayType<>(entry.getValue()))));
+            assertThat(nestedArraySymbol.valueType(), is(new ArrayType<>(new ArrayType<>(entry.getValue()))));
         }
     }
 }

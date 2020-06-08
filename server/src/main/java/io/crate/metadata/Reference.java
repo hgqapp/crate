@@ -39,8 +39,6 @@ import java.util.Objects;
 
 public class Reference extends Symbol {
 
-    public static final Comparator<Reference> COMPARE_BY_COLUMN_IDENT = Comparator.comparing(Reference::column);
-
     public enum IndexType {
         ANALYZED,
         NOT_ANALYZED,

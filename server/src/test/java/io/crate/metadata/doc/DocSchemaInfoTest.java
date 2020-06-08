@@ -23,7 +23,6 @@
 package io.crate.metadata.doc;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.crate.data.Input;
 import io.crate.expression.udf.UDFLanguage;
 import io.crate.expression.udf.UserDefinedFunctionMetaData;
@@ -31,9 +30,9 @@ import io.crate.expression.udf.UserDefinedFunctionService;
 import io.crate.expression.udf.UserDefinedFunctionsMetaData;
 import io.crate.metadata.FunctionIdent;
 import io.crate.metadata.FunctionInfo;
-import io.crate.metadata.TransactionContext;
 import io.crate.metadata.Functions;
 import io.crate.metadata.Scalar;
+import io.crate.metadata.TransactionContext;
 import io.crate.metadata.functions.Signature;
 import io.crate.test.integration.CrateDummyClusterServiceUnitTest;
 import io.crate.types.DataTypes;
@@ -45,6 +44,7 @@ import org.junit.Test;
 
 import javax.annotation.Nullable;
 import javax.script.ScriptException;
+import java.util.Map;
 
 import static io.crate.metadata.SearchPath.pathWithPGCatalogAndDoc;
 import static io.crate.testing.TestingHelpers.getFunctions;
@@ -102,7 +102,7 @@ public class DocSchemaInfoTest extends CrateDummyClusterServiceUnitTest {
             }
         });
         docSchemaInfo = new DocSchemaInfo("doc", clusterService, functions, udfService,
-            (ident, state) -> null, new TestingDocTableInfoFactory(ImmutableMap.of()));
+            (ident, state) -> null, new TestingDocTableInfoFactory(Map.of()));
     }
 
     @Test

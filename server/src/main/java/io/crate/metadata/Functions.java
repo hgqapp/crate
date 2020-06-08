@@ -22,8 +22,6 @@
 
 package io.crate.metadata;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 import io.crate.common.collections.Lists2;
 import io.crate.expression.symbol.FuncArg;
 import io.crate.metadata.functions.BoundVariables;
@@ -88,24 +86,26 @@ public class Functions {
     }
 
     private Map<FunctionName, FunctionResolver> generateFunctionResolvers(Map<FunctionIdent, FunctionImplementation> functionImplementations) {
-        Multimap<FunctionName, Tuple<FunctionIdent, FunctionImplementation>> signatures = getSignatures(functionImplementations);
-        return signatures.keys().stream()
+        HashMap<FunctionName, ArrayList<Tuple<FunctionIdent, FunctionImplementation>>> signatures = getSignatures(functionImplementations);
+        return signatures.keySet().stream()
             .distinct()
             .collect(Collectors.toMap(name -> name, name -> new GeneratedFunctionResolver(signatures.get(name))));
     }
 
     /**
-     * Adds all provided {@link FunctionIdent} to a Multimap with the function
+     * Adds all provided {@link FunctionIdent} to a map with the function
      * name as key and all possible overloads as values.
      * @param functionImplementations A map of all {@link FunctionIdent}.
      * @return The MultiMap with the function name as key and a tuple of
      *         FunctionIdent and FunctionImplementation as value.
      */
-    private Multimap<FunctionName, Tuple<FunctionIdent, FunctionImplementation>> getSignatures(
+    private HashMap<FunctionName, ArrayList<Tuple<FunctionIdent, FunctionImplementation>>> getSignatures(
         Map<FunctionIdent, FunctionImplementation> functionImplementations) {
-        Multimap<FunctionName, Tuple<FunctionIdent, FunctionImplementation>> signatureMap = ArrayListMultimap.create();
+        var signatureMap = new HashMap<FunctionName, ArrayList<Tuple<FunctionIdent, FunctionImplementation>>>();
         for (Map.Entry<FunctionIdent, FunctionImplementation> entry : functionImplementations.entrySet()) {
-            signatureMap.put(entry.getKey().fqnName(), new Tuple<>(entry.getKey(), entry.getValue()));
+            signatureMap
+                .computeIfAbsent(entry.getKey().fqnName(), v -> new ArrayList<>())
+                .add(new Tuple<>(entry.getKey(), entry.getValue()));
         }
         return signatureMap;
     }

@@ -21,11 +21,12 @@
 
 package io.crate.expression.scalar.geo;
 
-import com.google.common.collect.ImmutableMap;
 import io.crate.expression.scalar.AbstractScalarFunctionsTest;
 import io.crate.expression.symbol.Literal;
 import io.crate.types.DataTypes;
 import org.junit.Test;
+
+import java.util.Map;
 
 import static io.crate.testing.SymbolMatchers.isFunction;
 import static io.crate.testing.SymbolMatchers.isLiteral;
@@ -67,7 +68,7 @@ public class WithinFunctionTest extends AbstractScalarFunctionsTest {
     @Test
     public void testEvaluateObjectWithinShape() {
         assertEvaluate("within(geopoint, geoshape)", true,
-            Literal.of(ImmutableMap.<String, Object>of("type", "Point", "coordinates", new double[]{10.0, 10.0})),
+            Literal.of(Map.of("type", "Point", "coordinates", new double[]{10.0, 10.0})),
             Literal.of(DataTypes.GEO_SHAPE, DataTypes.GEO_SHAPE.value("POLYGON ((5 5, 20 5, 30 30, 5 30, 5 5))"))
         );
     }

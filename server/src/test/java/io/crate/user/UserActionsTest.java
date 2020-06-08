@@ -22,7 +22,6 @@
 
 package io.crate.user;
 
-import com.google.common.collect.ImmutableMap;
 import io.crate.data.Row;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.Symbol;
@@ -41,8 +40,8 @@ import java.util.Map;
 public class UserActionsTest extends CrateUnitTest {
 
     private static final Functions functions = new Functions(
-        ImmutableMap.of(),
-        ImmutableMap.of()
+        Map.of(),
+        Map.of()
     );
 
     TransactionContext txnCtx = CoordinatorTxnCtx.systemTransactionContext();
