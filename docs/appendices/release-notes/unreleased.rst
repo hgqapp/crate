@@ -268,6 +268,11 @@ Performance improvements
 Fixes
 =====
 
+- Added support for flag ``g`` to function
+  :ref:`regexp_matches <table-functions-regexp-matches>` and changed
+  its type from ``scalar`` to ``table`` type. It now returns a table where each
+  row contains a single column ``groups`` of type ``text_array``.
+
 - Fixed an issue that would prevent the :ref:`pg_stats <pg_stats>` table from
   querying if the ``most_common_vals`` or ``histogram_bounds`` columns contain
   values of the ``OBJECT`` or ``ARRAY`` types.

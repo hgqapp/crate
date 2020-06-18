@@ -22,10 +22,13 @@
 package io.crate.expression.scalar.regex;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class RegexMatcher {
 
@@ -33,26 +36,40 @@ public class RegexMatcher {
     private final Pattern pattern;
     private Matcher matcher;
 
-    public RegexMatcher(String regex, int flags, boolean globalFlag) {
-        pattern = Pattern.compile(regex, flags);
-        this.globalFlag = globalFlag;
-    }
-
     public RegexMatcher(String regex, @Nullable String flags) {
-        this(regex, parseFlags(flags), isGlobal(flags));
+        pattern = Pattern.compile(regex, parseFlags(flags));
+        globalFlag = isGlobal(flags);
     }
 
     public RegexMatcher(String regex) {
-        this(regex, 0, false);
+        this(regex, null);
     }
 
-    public boolean match(String term) {
+    public List<List<String>> match(String term) {
         initMatcher(term);
-        return matcher.find();
+        List<List<String>> result = null;
+        if (globalFlag) {
+            result = Stream
+                .generate(this::groups)
+                .takeWhile(Objects::nonNull)
+                .collect(Collectors.toList());
+            if (result.isEmpty()) {
+                result = null;
+            }
+        } else {
+            List<String> groups = groups();
+            if (groups != null) {
+                result = List.of(groups);
+            }
+        }
+        return result;
     }
 
     @Nullable
-    public List<String> groups() {
+    private List<String> groups() {
+        if (!matcher.find()) {
+            return null;
+        }
         int groupCount = matcher.groupCount();
         if (groupCount == 0) {
             try {
@@ -61,11 +78,10 @@ public class RegexMatcher {
                 return null;
             }
         }
-        ArrayList<String> groups = new ArrayList<>(groupCount);
-        for (int i = 0; i < groupCount; i++) {
-            groups.add(matcher.group(i + 1));
-        }
-        return groups;
+        return IntStream
+            .range(1, groupCount + 1)
+            .mapToObj(matcher::group)
+            .collect(Collectors.toList());
     }
 
     public String replace(String term, String replacement) {
@@ -85,7 +101,7 @@ public class RegexMatcher {
         }
     }
 
-    public static int parseFlags(@Nullable String flagsString) {
+    private static int parseFlags(@Nullable String flagsString) {
         int flags = 0;
         if (flagsString == null) {
             return flags;

@@ -19,29 +19,37 @@
  * software solely pursuant to the terms of the relevant commercial agreement.
  */
 
-package io.crate.expression.scalar.regex;
+package io.crate.expression.tablefunctions;
 
+import io.crate.common.annotations.VisibleForTesting;
 import io.crate.data.Input;
-import io.crate.expression.scalar.ScalarFunctionModule;
-import io.crate.expression.symbol.Function;
+import io.crate.data.Row;
+import io.crate.data.RowN;
+import io.crate.expression.scalar.regex.RegexMatcher;
 import io.crate.expression.symbol.Literal;
 import io.crate.expression.symbol.Symbol;
 import io.crate.expression.symbol.SymbolType;
 import io.crate.metadata.Scalar;
 import io.crate.metadata.TransactionContext;
 import io.crate.metadata.functions.Signature;
+import io.crate.metadata.tablefunctions.TableFunctionImplementation;
 import io.crate.types.DataTypes;
+import io.crate.types.RowType;
 
 import javax.annotation.Nullable;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
-public class MatchesFunction extends Scalar<List<String>, Object> {
+public class MatchesFunction extends TableFunctionImplementation<List<Object>> {
 
     public static final String NAME = "regexp_matches";
+    private static final RowType ROW_TYPE = new RowType(
+        List.of(DataTypes.STRING_ARRAY), List.of("groups"));
 
-    public static void register(ScalarFunctionModule module) {
+    public static void register(TableFunctionModule module) {
         module.register(
-            Signature.scalar(
+            Signature.table(
                 NAME,
                 DataTypes.STRING.getTypeSignature(),
                 DataTypes.STRING.getTypeSignature(),
@@ -50,7 +58,7 @@ public class MatchesFunction extends Scalar<List<String>, Object> {
             MatchesFunction::new
         );
         module.register(
-            Signature.scalar(
+            Signature.table(
                 NAME,
                 DataTypes.STRING.getTypeSignature(),
                 DataTypes.STRING.getTypeSignature(),
@@ -61,18 +69,16 @@ public class MatchesFunction extends Scalar<List<String>, Object> {
         );
     }
 
-    private final Signature signature;
-    private final Signature boundSignature;
     @Nullable
     private final RegexMatcher regexMatcher;
+    private final Signature signature;
+    private final Signature boundSignature;
 
     private MatchesFunction(Signature signature, Signature boundSignature) {
         this(signature, boundSignature, null);
     }
 
-    private MatchesFunction(Signature signature,
-                            Signature boundSignature,
-                            @Nullable RegexMatcher regexMatcher) {
+    private MatchesFunction(Signature signature, Signature boundSignature, @Nullable RegexMatcher regexMatcher) {
         this.signature = signature;
         this.boundSignature = boundSignature;
         this.regexMatcher = regexMatcher;
@@ -88,39 +94,23 @@ public class MatchesFunction extends Scalar<List<String>, Object> {
         return boundSignature;
     }
 
+    @Override
+    public RowType returnType() {
+        return ROW_TYPE;
+    }
+
+    @Override
+    public boolean hasLazyResultSet() {
+        return false;
+    }
+
+    @VisibleForTesting
     RegexMatcher regexMatcher() {
         return regexMatcher;
     }
 
     @Override
-    public Symbol normalizeSymbol(Function symbol, TransactionContext txnCtx) {
-        final int size = symbol.arguments().size();
-        assert size == 2 || size == 3 : "function's number of arguments must be 2 or 3";
-
-        if (anyNonLiterals(symbol.arguments())) {
-            return symbol;
-        }
-
-        final Symbol input = symbol.arguments().get(0);
-        final Symbol pattern = symbol.arguments().get(1);
-        final Object inputValue = ((Input) input).value();
-        final Object patternValue = ((Input) pattern).value();
-        if (inputValue == null || patternValue == null) {
-            return Literal.NULL;
-        }
-
-        Input[] args = new Input[size];
-        args[0] = (Input) input;
-        args[1] = (Input) pattern;
-
-        if (size == 3) {
-            args[2] = (Input) symbol.arguments().get(2);
-        }
-        return Literal.of(evaluate(txnCtx, args), DataTypes.STRING_ARRAY);
-    }
-
-    @Override
-    public Scalar<List<String>, Object> compile(List<Symbol> arguments) {
+    public Scalar<Iterable<Row>, List<Object>> compile(List<Symbol> arguments) {
         assert arguments.size() > 1 : "number of arguments must be > 1";
         String pattern = null;
         if (arguments.get(1).symbolType() == SymbolType.LITERAL) {
@@ -137,21 +127,22 @@ public class MatchesFunction extends Scalar<List<String>, Object> {
                 "3rd argument must be a " + SymbolType.LITERAL;
             flags = (String) ((Literal) arguments.get(2)).value();
         }
-
         if (pattern != null) {
-            return new MatchesFunction(signature, boundSignature, new RegexMatcher(pattern, flags));
+            return new MatchesFunction(
+                signature, boundSignature, new RegexMatcher(pattern, flags));
         }
         return this;
     }
 
     @Override
-    public List<String> evaluate(TransactionContext txnCtx, Input[] args) {
+    public Iterable<Row> evaluate(TransactionContext txnCtx, Input[] args) {
         assert args.length == 2 || args.length == 3 : "number of args must be 2 or 3";
-        String val = (String) args[0].value();
+        String value = (String) args[0].value();
         String pattern = (String) args[1].value();
-        if (val == null || pattern == null) {
+        if (value == null || pattern == null) {
             return null;
         }
+
         RegexMatcher matcher;
         if (regexMatcher == null) {
             String flags = null;
@@ -163,9 +154,26 @@ public class MatchesFunction extends Scalar<List<String>, Object> {
             matcher = regexMatcher;
         }
 
-        if (matcher.match(val)) {
-            return matcher.groups();
-        }
-        return null;
+        List<List<String>> rowGroups = matcher.match(value);
+        return rowGroups == null ? null : () -> new Iterator<>() {
+
+            final Object [] columns = new Object[]{ null };
+            final RowN row = new RowN(columns);
+            int idx = 0;
+
+            @Override
+            public boolean hasNext() {
+                return idx < rowGroups.size();
+            }
+
+            @Override
+            public Row next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException("no more rows");
+                }
+                columns[0] = rowGroups.get(idx++);
+                return row;
+            }
+        };
     }
 }

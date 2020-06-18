@@ -1711,123 +1711,6 @@ See the api documentation for more details.
 
 .. _Lucene Regular Expressions: http://lucene.apache.org/core/4_9_0/core/org/apache/lucene/util/automaton/RegExp.html
 
-.. _scalar-regexp-matches:
-
-``regexp_matches(source, pattern [, flags])``
----------------------------------------------
-
-This function uses the regular expression pattern in ``pattern`` to match
-against the ``source`` string.
-
-Returns: ``text_array``
-
-If ``source`` matches, an array of the matched regular expression groups is
-returned.
-
-If no regular expression group was used, the whole pattern is used as a group.
-
-If ``source`` does not match, this function returns ``NULL``.
-
-A regular expression group is formed by a subexpression that is surrounded by
-parentheses.The position of a group is determined by the position of its
-opening parenthesis.
-
-For example when matching the pattern ``\b([A-Z])`` a match for the
-subexpression ``([A-Z])`` would create group No. 1. If you want to group stuff
-with parentheses, but without grouping, use ``(?...)``.
-
-For example matching the regular expression ``([Aa](.+)z)`` against
-``alcatraz``, results in these groups:
-
- * group 1: ``alcatraz`` (from first to last parenthesis or whole pattern)
- * group 2: ``lcatra`` (beginning at second parenthesis)
-
-The ``regexp_matches`` function will return all groups as a ``text`` array::
-
-    cr> select regexp_matches('alcatraz', '(a(.+)z)') as matched;
-    +------------------------+
-    | matched                |
-    +------------------------+
-    | ["alcatraz", "lcatra"] |
-    +------------------------+
-    SELECT 1 row in set (... sec)
-
-::
-
-    cr> select regexp_matches('alcatraz', 'traz') as matched;
-    +----------+
-    | matched  |
-    +----------+
-    | ["traz"] |
-    +----------+
-    SELECT 1 row in set (... sec)
-
-Through array element access functionality, a group can be selected directly.
-See :ref:`sql_dql_object_arrays_select` for details.
-
-::
-
-    cr> select regexp_matches('alcatraz', '(a(.+)z)')[2] as second_group;
-    +--------------+
-    | second_group |
-    +--------------+
-    | lcatra       |
-    +--------------+
-    SELECT 1 row in set (... sec)
-
-.. _scalar-regexp-matches-flags:
-
-Flags
-.....
-
-This function takes a number of flags as optional third parameter. These flags
-are given as a string containing any of the characters listed below. Order does
-not matter.
-
-+-------+---------------------------------------------------------------------+
-| Flag  | Description                                                         |
-+=======+=====================================================================+
-| ``i`` | enable case insensitive matching                                    |
-+-------+---------------------------------------------------------------------+
-| ``u`` | enable unicode case folding when used together with ``i``           |
-+-------+---------------------------------------------------------------------+
-| ``U`` | enable unicode support for character classes like ``\W``            |
-+-------+---------------------------------------------------------------------+
-| ``s`` | make ``.`` match line terminators, too                              |
-+-------+---------------------------------------------------------------------+
-| ``m`` | make ``^`` and ``$`` match on the beginning or end of a line        |
-|       | too.                                                                |
-+-------+---------------------------------------------------------------------+
-| ``x`` | permit whitespace and line comments starting with ``#``             |
-+-------+---------------------------------------------------------------------+
-| ``d`` | only ``\n`` is considered a line-terminator when using ``^``, ``$`` |
-|       | and ``.``                                                           |
-+-------+---------------------------------------------------------------------+
-
-Examples
-........
-
-::
-
-    cr> select regexp_matches('foobar', '^(a(.+)z)$') as matched;
-    +---------+
-    | matched |
-    +---------+
-    | NULL    |
-    +---------+
-    SELECT 1 row in set (... sec)
-
-::
-
-    cr> select regexp_matches('99 bottles of beer on the wall', '\d{2}\s(\w+).*', 'ixU')
-    ... as matched;
-    +-------------+
-    | matched     |
-    +-------------+
-    | ["bottles"] |
-    +-------------+
-    SELECT 1 row in set (... sec)
-
 ``regexp_replace(source, pattern, replacement [, flags])``
 ----------------------------------------------------------
 
@@ -1852,13 +1735,29 @@ will be replaced. If all occurrences shall be replaced use the ``g`` flag.
 Flags
 .....
 
-``regexp_replace`` supports the same flags than ``regexp_matches``, see
-:ref:`regexp_matches Flags <scalar-regexp-matches-flags>` and additionally the
-``g`` flag:
+``regexp_replace`` supports a number of flags as optional third parameter. These
+flags are given as a string containing any of the characters listed below. Order
+does not matter.
 
 +-------+---------------------------------------------------------------------+
 | Flag  | Description                                                         |
 +=======+=====================================================================+
+| ``i`` | enable case insensitive matching                                    |
++-------+---------------------------------------------------------------------+
+| ``u`` | enable unicode case folding when used together with ``i``           |
++-------+---------------------------------------------------------------------+
+| ``U`` | enable unicode support for character classes like ``\W``            |
++-------+---------------------------------------------------------------------+
+| ``s`` | make ``.`` match line terminators, too                              |
++-------+---------------------------------------------------------------------+
+| ``m`` | make ``^`` and ``$`` match on the beginning or end of a line        |
+|       | too.                                                                |
++-------+---------------------------------------------------------------------+
+| ``x`` | permit whitespace and line comments starting with ``#``             |
++-------+---------------------------------------------------------------------+
+| ``d`` | only ``\n`` is considered a line-terminator when using ``^``, ``$`` |
+|       | and ``.``                                                           |
++-------+---------------------------------------------------------------------+
 | ``g`` | replace all occurrences of a subsequence matching ``pattern``,      |
 |       | not only the first                                                  |
 +-------+---------------------------------------------------------------------+

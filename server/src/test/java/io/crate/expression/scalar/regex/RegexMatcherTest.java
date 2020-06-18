@@ -25,7 +25,12 @@ import io.crate.test.integration.CrateUnitTest;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
 
 public class RegexMatcherTest extends CrateUnitTest {
 
@@ -34,28 +39,35 @@ public class RegexMatcherTest extends CrateUnitTest {
         String pattern = "hello";
         String text = "foobarbequebaz";
         RegexMatcher regexMatcher = new RegexMatcher(pattern);
-        assertEquals(false, regexMatcher.match(text));
-        assertThat(regexMatcher.groups(), Matchers.nullValue());
+        assertThat(regexMatcher.match(text), Matchers.nullValue());
 
         pattern = "ba";
         regexMatcher = new RegexMatcher(pattern);
-        assertEquals(true, regexMatcher.match(text));
-        assertThat(regexMatcher.groups(), contains("ba"));
+        assertThat(regexMatcher.match(text), contains(List.of("ba")));
 
         pattern = "(ba)";
         regexMatcher = new RegexMatcher(pattern);
-        assertEquals(true, regexMatcher.match(text));
-        assertThat(regexMatcher.groups(), contains("ba"));
+        assertThat(regexMatcher.match(text), contains(List.of("ba")));
 
         pattern = ".*(ba).*";
         regexMatcher = new RegexMatcher(pattern);
-        assertEquals(true, regexMatcher.match(text));
-        assertThat(regexMatcher.groups(), contains("ba"));
+        assertThat(regexMatcher.match(text), contains(List.of("ba")));
 
         pattern = "((\\w+?)(ba))";
         regexMatcher = new RegexMatcher(pattern);
-        assertEquals(true, regexMatcher.match(text));
-        assertThat(regexMatcher.groups(), contains("fooba", "foo", "ba"));
+        assertThat(regexMatcher.match(text), contains(List.of("fooba", "foo", "ba")));
+    }
+
+    @Test
+    public void testMatchGlobal() {
+        String pattern = "(oo)";
+        String text = "zoom zoom zoooooom";
+        RegexMatcher regexMatcher = new RegexMatcher(pattern, "gig");
+        List<List<String>> expected = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            expected.add(List.of("oo"));
+        }
+        assertThat(regexMatcher.match(text), is(expected));
     }
 
     @Test
@@ -95,7 +107,6 @@ public class RegexMatcherTest extends CrateUnitTest {
         String pattern = "\\w+( --?\\w+)*( \\w+)*";
         String text = "gcc -Wall --std=c99 -o source source.c";
         RegexMatcher regexMatcher = new RegexMatcher(pattern);
-        assertEquals(true, regexMatcher.match(text));
-        assertThat(regexMatcher.groups(), contains(" --std", null));
+        assertThat(regexMatcher.match(text), contains(Arrays.asList(" --std", null)));
     }
 }
