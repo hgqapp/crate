@@ -124,8 +124,6 @@ public abstract class DataType<T> implements Comparable<DataType<?>>, Writeable,
         return (T) value;
     }
 
-    public abstract T value(Object value) throws IllegalArgumentException, ClassCastException;
-
     public abstract T sanitizeValue(Object value);
 
     public TypeSignature getTypeSignature() {
